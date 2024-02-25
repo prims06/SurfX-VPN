@@ -6,6 +6,7 @@ import 'package:vpn_app/controllers/home_controller.dart';
 import 'package:vpn_app/main.dart';
 import 'package:vpn_app/models/vpn_status.dart';
 import 'package:vpn_app/repositories/appPreferences.dart';
+import 'package:vpn_app/screens/available_vpn_servers_location_screen.dart';
 import 'package:vpn_app/vpnEngine/vpn_engine.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -17,7 +18,9 @@ class HomeScreen extends StatelessWidget {
       child: Semantics(
         button: true,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            Get.to(() => AvailableVPNServersScreen());
+          },
           child: Container(
             color: Colors.redAccent,
             padding: EdgeInsets.symmetric(horizontal: sizeScreen.width * 0.041),
@@ -63,7 +66,9 @@ class HomeScreen extends StatelessWidget {
         Semantics(
           button: true,
           child: InkWell(
-            onTap: () {},
+            onTap: () {
+              homeController.connectToVpnNow();
+            },
             child: Container(
               padding: EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -115,6 +120,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     sizeScreen = MediaQuery.of(context).size;
+    VpnEngine.snapshotVpnStage().listen((event) {
+      homeController.vpnConnectionState.value = event;
+    });
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.redAccent,
@@ -184,7 +192,7 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          vpnRoundedButton(),
+          Obx(() => vpnRoundedButton()),
           StreamBuilder<VpnStatus?>(
               initialData: VpnStatus(),
               stream: VpnEngine.snapshotVpnStatus(),

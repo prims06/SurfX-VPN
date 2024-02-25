@@ -6,7 +6,9 @@ import 'package:get/get.dart';
 import 'package:vpn_app/controllers/home_controller.dart';
 import 'package:vpn_app/main.dart';
 import 'package:vpn_app/models/vpn_info.dart';
+import 'package:vpn_app/repositories/appPreferences.dart';
 import 'package:vpn_app/utils/extensions.dart';
+import 'package:vpn_app/vpnEngine/vpn_engine.dart';
 
 class VpnLocationCardWidget extends StatelessWidget {
   const VpnLocationCardWidget({super.key, required this.vpnInfo});
@@ -18,8 +20,8 @@ class VpnLocationCardWidget extends StatelessWidget {
     }
 
     const suffixesTitle = ['Bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
-    var speedTitleIndex = (log(speedBytes)/log(1024)).floor();
-    return '${(speedBytes/pow(1024, speedTitleIndex)).toStringAsFixed(decimals)} ${suffixesTitle[speedTitleIndex]}';
+    var speedTitleIndex = (log(speedBytes) / log(1024)).floor();
+    return '${(speedBytes / pow(1024, speedTitleIndex)).toStringAsFixed(decimals)} ${suffixesTitle[speedTitleIndex]}';
   }
 
   @override
@@ -31,7 +33,19 @@ class VpnLocationCardWidget extends StatelessWidget {
       margin: EdgeInsets.symmetric(vertical: sizeScreen.height * 0.01),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          homeController.vpnInfo.value = vpnInfo;
+          AppPreferences.vpnInfoObj = vpnInfo;
+          Get.back();
+          if (homeController.vpnConnectionState.value ==
+              VpnEngine.vpnConnectedNow) {
+            VpnEngine.stopVpnNow();
+            Future.delayed(
+                Duration(seconds: 2), () => homeController.connectToVpnNow());
+          } else {
+            homeController.connectToVpnNow();
+          }
+        },
         borderRadius: BorderRadius.circular(16),
         child: ListTile(
           shape:
@@ -50,7 +64,7 @@ class VpnLocationCardWidget extends StatelessWidget {
             ),
           ),
           title: Text(vpnInfo.countryLongName),
-          subtitle:  Row(
+          subtitle: Row(
             children: [
               Icon(
                 Icons.shutter_speed,
@@ -60,9 +74,10 @@ class VpnLocationCardWidget extends StatelessWidget {
               const SizedBox(
                 width: 4,
               ),
-              Text(formatSpeedBytes(vpnInfo.speed, 2), style: TextStyle(
-                fontSize: 13
-              ),),
+              Text(
+                formatSpeedBytes(vpnInfo.speed, 2),
+                style: TextStyle(fontSize: 13),
+              ),
             ],
           ),
           trailing: Row(
@@ -71,16 +86,17 @@ class VpnLocationCardWidget extends StatelessWidget {
               Text(
                 vpnInfo.vpnSessionsNum.toString(),
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).lightTextColor
-                ),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).lightTextColor),
               ),
               const SizedBox(
                 width: 4,
               ),
-              Icon(CupertinoIcons.person_2_alt, color: Colors.redAccent,),
-              
+              Icon(
+                CupertinoIcons.person_2_alt,
+                color: Colors.redAccent,
+              ),
             ],
           ),
         ),
