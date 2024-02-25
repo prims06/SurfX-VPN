@@ -29,4 +29,10 @@ class AppPreferences {
 
     return tempVpnList;
   }
+
+  static set vpnList(vpnList) {
+boxOfData.put('vpnList', jsonEncode(vpnList));
+  }
+      
+
 }

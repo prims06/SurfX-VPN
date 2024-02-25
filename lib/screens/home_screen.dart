@@ -2,12 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:vpn_app/components/custom_round_widget.dart';
+import 'package:vpn_app/controllers/home_controller.dart';
 import 'package:vpn_app/main.dart';
+import 'package:vpn_app/models/vpn_status.dart';
 import 'package:vpn_app/repositories/appPreferences.dart';
+import 'package:vpn_app/vpnEngine/vpn_engine.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
+  final homeController = Get.find<HomeController>();
   locationSelectionBottomNav(BuildContext context) {
     return SafeArea(
       child: Semantics(
@@ -62,18 +66,23 @@ class HomeScreen extends StatelessWidget {
             onTap: () {},
             child: Container(
               padding: EdgeInsets.all(18),
-              decoration:
-                  BoxDecoration(shape: BoxShape.circle, color: Colors.red),
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      homeController.getRoundVpnButtonColor.withOpacity(0.1)),
               child: Container(
                 padding: EdgeInsets.all(18),
-                decoration:
-                    BoxDecoration(shape: BoxShape.circle, color: Colors.red),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color:
+                        homeController.getRoundVpnButtonColor.withOpacity(0.3)),
                 child: Container(
                   width: sizeScreen.height * .14,
                   height: sizeScreen.height * .14,
-                  decoration:
-                      BoxDecoration(shape: BoxShape.circle, color: Colors.red),
-                  child: const Center(
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: homeController.getRoundVpnButtonColor),
+                  child: Center(
                     child: Column(
                       children: [
                         Icon(
@@ -85,7 +94,7 @@ class HomeScreen extends StatelessWidget {
                           height: 6,
                         ),
                         Text(
-                          'Tap to connect',
+                          homeController.getRoundVpnButtonText,
                           style: TextStyle(
                               fontSize: 13,
                               color: Colors.white,
@@ -130,65 +139,86 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomRoundWidget(
-                  titleText: 'Location',
-                  subtitleText: 'FREE',
-                  roundWidgetIcon: const CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.black54,
-                    child: Icon(
-                      Icons.flag_circle,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  )),
-              CustomRoundWidget(
-                  titleText: '60 ms',
-                  subtitleText: 'PING',
-                  roundWidgetIcon: const CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.black54,
-                    child: Icon(
-                      Icons.flag_circle,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  )),
-            ],
+          Obx(
+            () => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CustomRoundWidget(
+                    titleText:
+                        homeController.vpnInfo.value.countryLongName.isEmpty
+                            ? 'Location'
+                            : homeController.vpnInfo.value.countryLongName,
+                    subtitleText: 'FREE',
+                    roundWidgetIcon: CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.black54,
+                      child:
+                          homeController.vpnInfo.value.countryLongName.isEmpty
+                              ? Icon(
+                                  Icons.flag_circle,
+                                  color: Colors.white,
+                                  size: 30,
+                                )
+                              : null,
+                      backgroundImage: (!homeController
+                              .vpnInfo.value.countryLongName.isEmpty)
+                          ? AssetImage(
+                              'assets/images/countryFlags/${homeController.vpnInfo.value.countryShortName.toLowerCase()}.png')
+                          : null,
+                    )),
+                CustomRoundWidget(
+                    titleText:
+                        homeController.vpnInfo.value.countryLongName.isEmpty
+                            ? '60 ms'
+                            : '${homeController.vpnInfo.value.ping} ms',
+                    subtitleText: 'PING',
+                    roundWidgetIcon: const CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.black54,
+                      child: Icon(
+                        Icons.flag_circle,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    )),
+              ],
+            ),
           ),
           vpnRoundedButton(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomRoundWidget(
-                  titleText: '0 kbps',
-                  subtitleText: 'DOWNLOAD',
-                  roundWidgetIcon: const CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.greenAccent,
-                    child: Icon(
-                      Icons.arrow_circle_down,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  )),
-              CustomRoundWidget(
-                  titleText: '0 kbps',
-                  subtitleText: 'UPLOAD',
-                  roundWidgetIcon: const CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.purpleAccent,
-                    child: Icon(
-                      Icons.arrow_circle_up,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  )),
-            ],
-          )
+          StreamBuilder<VpnStatus?>(
+              initialData: VpnStatus(),
+              stream: VpnEngine.snapshotVpnStatus(),
+              builder: ((context, snapshot) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CustomRoundWidget(
+                        titleText: "${snapshot.data?.byteIn}??'0 kbps'",
+                        subtitleText: 'DOWNLOAD',
+                        roundWidgetIcon: const CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.greenAccent,
+                          child: Icon(
+                            Icons.arrow_circle_down,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        )),
+                    CustomRoundWidget(
+                        titleText: "${snapshot.data?.byteOut}??'0 kbps'",
+                        subtitleText: 'UPLOAD',
+                        roundWidgetIcon: const CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.purpleAccent,
+                          child: Icon(
+                            Icons.arrow_circle_up,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        )),
+                  ],
+                );
+              }))
         ],
       ),
     );
